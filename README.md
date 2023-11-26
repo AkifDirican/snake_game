@@ -1,2 +1,2 @@
 # snake_game
-Akif's Snake Game
+Akif Yahya Dirican's Snake Game
