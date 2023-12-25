@@ -7,36 +7,56 @@ import random
 
 SIZE = 20
 
+class PlayingScreen:
+    def __init__(self, surface):
+        self.surface = surface
+        self.border_width = SIZE
+        self.width = 500
+        self.height = 500
+
+    def draw_screen(self):
+        # Clear the screen with a white background
+        self.surface.fill((255, 255, 255))
+
+        # Draw horizontal borders
+        pygame.draw.rect(self.surface, (0, 0, 0), (0, 0, self.width, self.border_width))  # Top border
+        pygame.draw.rect(self.surface, (0, 0, 0), (0, 0, self.border_width, self.height))  # Left border
+        pygame.draw.rect(self.surface, (0, 0, 0), (0, self.height - self.border_width, self.width, self.border_width))  # Bottom border
+        pygame.draw.rect(self.surface, (0, 0, 0), (self.width - self.border_width, 0, self.border_width, self.height))  # Right border
+
+    def is_collision_with_border(self, x, y):
+        return x < self.border_width or x >= self.width - self.border_width or y < self.border_width or y >= self.height - self.border_width
+
 class Apple:
     def __init__(self, parent_screen):
         self.apple = pygame.image.load ("apple.png").convert()
-        self.apple = pygame.transform.scale(self.apple, (20,20))
+        self.apple = pygame.transform.scale(self.apple, (SIZE, SIZE))
         self.parent_screen = parent_screen
-        self.x = SIZE * 7
-        self.y = SIZE * 7
+        self.x = random.randint(1, 23) * SIZE
+        self.y = random.randint(1, 23) * SIZE
 
     def draw(self):
         self.parent_screen.blit(self.apple,(self.x, self.y))
         pygame.display.flip()
 
     def move (self):
-        self.x = random.randint(0, 24) * SIZE
-        self.y = random.randint(0, 24) * SIZE
+        self.x = random.randint(1, 23) * SIZE
+        self.y = random.randint(1, 23) * SIZE
 
 class Snake:
     def __init__(self, parent_screen, length):
         self.length = length
         self.parent_screen = parent_screen
-        self.block = pygame.image.load ("green.png").convert()
-        self.block = pygame.transform.scale(self.block, (20,20))
         self.x = [SIZE] * length
         self.y = [SIZE] * length
         self.direction = "down"
 
     def draw(self):
-        self.parent_screen.fill ((255,255,255))
-        for i in range (self.length):
-            self.parent_screen.blit(self.block,(self.x[i], self.y[i]))
+        self.head = pygame.image.load ("snake_head.png").convert()
+        self.head = pygame.transform.scale(self.head, (SIZE, SIZE))
+        self.parent_screen.blit(self.head, (self.x[0], self.y[0]))
+        for i in range(1, self.length):
+            pygame.draw.rect(self.parent_screen, (0, 255, 0), (self.x[i], self.y[i], SIZE, SIZE))  # Draw green squares for the snake
         pygame.display.flip()
 
     def increase_length (self):
@@ -76,11 +96,9 @@ class Game:
     def __init__(self):
         pygame.init()
         self.surface = pygame.display.set_mode((500,500))
-        self.surface.fill ((255,255,255))
+        self.playing_screen = PlayingScreen(self.surface)
         self.snake = Snake (self.surface, 3)
-        self.snake.draw()
         self.apple = Apple (self.surface)
-        self.apple.draw()
 
     def is_collision (self, x1, y1, x2, y2):
         if x1 >= x2 and x1 < x2 + SIZE:
@@ -91,11 +109,13 @@ class Game:
     def score(self):
         font = pygame.font.SysFont("arial", 12)
         score = font.render (f"Score: {self.snake.length}", True, (1,1,1))
-        self.surface.blit (score, (450,12))
+        self.surface.blit (score, (10,480))
 
     def play(self):
+        self.playing_screen.draw_screen()
         self.snake.walk()
         self.apple.draw()
+        self.snake.draw()
         self.score()
         pygame.display.flip()
 
@@ -110,6 +130,10 @@ class Game:
     def run(self):
         running = True
         while running:
+            if self.playing_screen.is_collision_with_border(self.snake.x[0], self.snake.y[0]):
+                pygame.quit()  # Quit Pygame
+                exit()  # Exit the game loop
+
             for event in pygame.event.get():
                 if event.type == KEYDOWN:
                     if event.key == K_ESCAPE:
