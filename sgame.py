@@ -19,13 +19,13 @@ class PlayingScreen:
         self.surface.fill((255, 255, 255))
 
         # Draw horizontal borders
-        pygame.draw.rect(self.surface, (0, 0, 0), (0, 0, self.width, self.border_width))  # Top border
-        pygame.draw.rect(self.surface, (0, 0, 0), (0, 0, self.border_width, self.height))  # Left border
+        pygame.draw.rect(self.surface, (0, 0, 0), (0, SIZE, self.width, self.border_width))  # Top border
+        pygame.draw.rect(self.surface, (0, 0, 0), (0, SIZE, self.border_width, self.height - SIZE))  # Left border
         pygame.draw.rect(self.surface, (0, 0, 0), (0, self.height - self.border_width, self.width, self.border_width))  # Bottom border
-        pygame.draw.rect(self.surface, (0, 0, 0), (self.width - self.border_width, 0, self.border_width, self.height))  # Right border
+        pygame.draw.rect(self.surface, (0, 0, 0), (self.width - self.border_width, SIZE, self.border_width, self.height - SIZE))  # Right border
 
     def is_collision_with_border(self, x, y):
-        return x < self.border_width or x >= self.width - self.border_width or y < self.border_width or y >= self.height - self.border_width
+        return x < self.border_width or x >= self.width - self.border_width or y < self.border_width + SIZE or y >= self.height - self.border_width
 
 class Apple:
     def __init__(self, parent_screen):
@@ -33,22 +33,28 @@ class Apple:
         self.apple = pygame.transform.scale(self.apple, (SIZE, SIZE))
         self.parent_screen = parent_screen
         self.x = random.randint(1, 23) * SIZE
-        self.y = random.randint(1, 23) * SIZE
+        self.y = random.randint(3, 23) * SIZE
 
     def draw(self):
         self.parent_screen.blit(self.apple,(self.x, self.y))
         pygame.display.flip()
 
-    def move (self):
-        self.x = random.randint(1, 23) * SIZE
-        self.y = random.randint(1, 23) * SIZE
+    def move (self, snakex, snakey):
+        while True:
+            self.x = random.randint(1, 23) * SIZE
+            self.y = random.randint(3, 23) * SIZE
+
+            # Check if the apple spawns on the snake
+            if (self.x in snakex) and (self.y in snakey):
+                continue
+            break
 
 class Snake:
     def __init__(self, parent_screen, length):
         self.length = length
         self.parent_screen = parent_screen
         self.x = [SIZE] * length
-        self.y = [SIZE] * length
+        self.y = [3 * SIZE] * length
         self.direction = "down"
 
     def draw(self):
@@ -109,7 +115,7 @@ class Game:
     def score(self):
         font = pygame.font.SysFont("arial", 12)
         score = font.render (f"Score: {self.snake.length}", True, (1,1,1))
-        self.surface.blit (score, (10,480))
+        self.surface.blit (score, (20,0))
 
     def play(self):
         self.playing_screen.draw_screen()
@@ -121,16 +127,18 @@ class Game:
 
         if self.is_collision (self.snake.x[0], self.snake.y[0], self.apple.x, self.apple.y):
             self.snake.increase_length()
-            self.apple.move()
+            self.apple.move(self.snake.x, self.snake.y)
 
         for i in range(3, self.snake.length):
             if self.is_collision (self.snake.x[0], self.snake.y[0], self.snake.x[i], self.snake.y[i]):
+                print (f"Score: {self.snake.length}")
                 exit()
 
     def run(self):
         running = True
         while running:
             if self.playing_screen.is_collision_with_border(self.snake.x[0], self.snake.y[0]):
+                print (f"Score: {self.snake.length}")
                 pygame.quit()  # Quit Pygame
                 exit()  # Exit the game loop
 
@@ -150,6 +158,7 @@ class Game:
                 
                 elif event.type == QUIT:
                     running = False
+                    print (f"Score: {self.snake.length}")
             
             self.play()
             time.sleep(0.1)
